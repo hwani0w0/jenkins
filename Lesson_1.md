@@ -67,3 +67,36 @@ kubernete master node 안에  jenkins/agent 설치 > kubernetes agent 통신
 
 
 
+=======================================
+
+
+# GitLab
+
+## github와 차이?
+ - 오프라인에서도 쓸 수 있음
+ - cicd pipeline 지원
+ - agent X / runner O
+ - 오픈소스
+
+multipass : https://multipass.run/install
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,508 @@
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
+chmod +x ./kind
+mv ./kind /some-dir-in-your-PATH/kind
+vi jenkins-config.yaml
+https://raw.githubusercontent.com/darinpope/ansible-jenkins/main/centos/7/005-controller-only/jenkins-config.yaml
+./kind create cluster --config jenkins-config.yaml 
+kubectl cluster-info --context kind-kind
+
+[root@master01 ~]# kubectl cluster-info --context kind-kind
+Kubernetes master is running at https://172.25.0.143:58350
+CoreDNS is running at https://172.25.0.143:58350/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+
+kubectl create namespace jenkins
+kubectl get ns
+kubectl create serviceaccount jenkins --namespace=jenkins
+kubectl describe secret $(kubectl describe serviceaccount jenkins --namespace=jenkins | grep Token | awk '{print $2}') --namespace=jenkins
+kubectl create rolebinding jenkins-admin-binding --clusterrole=admin --serviceaccount=jenkins:jenkins --namespace=jenkins
+kubectl get pod
+ip a
+kubectl get pod
+kubectl get pods --all-namespaces
+
+plugin --> kubernetes --> reboot
+kubernetes 
+Kubernetes URL --> https://172.25.0.143:58350
+Disable https certificate check -- check
+Kubernetes Namespace  -- jenkins
+Credentials --> add -- jenkins -- kind secret text -- secret -- id --jenkins-kind --
+WebSocket
+
+Jenkinsfile-k8s-make
+pipeline {
+    agent {
+    kubernetes {
+      label 'make'
+      yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: gcc
+    image: gcc:8.1.0
+    command:
+    - cat
+    tty: true
+"""
+    }
+  }
+    stages {
+        stage("first") {
+            steps {
+                container("gcc") {
+                    sh """
+                        make --version
+                        gcc --version
+                    """
+                }
+            }
+        }
+    }
+}
+
+==================================================================
+#storage
+
+plugin --> installed pliugins --> cloudb 쓰기 -->  	
+CloudBees Disk Usage Simple Version 인스톨
+
+Status Information에 disk usage --> dirc... 당 
+
+===================================================================
+#PROMETHEUS
+
+yum -y update
+mkdir $HOME/jenkins_home
+
+docker run -u 0 --privileged --name jenkins -it -d -p 8080:8080 -p 50000:50000 \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v $(which docker):/usr/bin/docker \
+-v /home/jenkins_home:/var/jenkins_home \
+jenkins/jenkins:latest
+
+minikube start
+#도커권한용
+docker logs jenkins
+docker ps -a
+
+manage jenkins --> plugins --> prometheus metrics, cloudbees disk..  --> restart 시 
+manage jenkins --> disk usage, dirc.. 확인 --> 
+manage jenkins --> sytem에 --> prometheus 생기고 
+Prometheus
+Path Prometheus
+Collecting metrics period in seconds 120 --> 5, 
+save
+?
+
+localhost:8080/rometheus
+
+https://github.com/darinpope?tab=repositories
+
+https://raw.githubusercontent.com/prometheus/prometheus/main/documentation/examples/prometheus.yml
+vi prometheus.yml
+# my global config
+global:
+  scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  scrape_timeout: 10s # is set to the global default (10s).
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: "prometheus"
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "jenkins"
+    metrics_path: /prometheus/
+    # scheme defaults to 'http'.
+    static_configs:
+      - targets: ["172.25.0.148:8080"]
+
+
+docker run -d -p 9090:9090 -v /root/Templates/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
+http://localhost:9090/graph?g0.expr=&g0.tab=1&g0.stacked=0&g0.show_exemplars=0&g0.range_input=1h
+지구본 클릭
+jenkins_executor_count_value 
+
+jenkins 실행
+
+docker run -d -p 3000:3000 --name grafana grafana/grafana
+admin/admin
+datasource -- Prometheus-jenkins --http://172.25.0.148 --- Server(default)
+Dashboard  id 9964  execute 를 보라 추가후 보라
+
+agent-1
+/var/jenkins
+
+launch method -- launch a...
+use Websocket 
+
+java --version
+yum install java-11-openjdk-devel.x86_64 -y
+alternatives --config java   2번선택
+
+pipeline {
+    agent {
+           label 'agent-1'
+    }
+    stages {
+          stage('Hello') {
+                steps {
+                      echo 'Hello World'
+                }
+          }
+    }
+}
+
+==================================================================
+#ANSIBLE
+
+https://github.com/darinpope?tab=repositories
+https://github.com/darinpope/jenkins-example-ansible
+
+yum -y install git
+yum install -y epel-release
+yum install -y ansible
+ansible --version
+
+agent-1 --> label linux
+
+ansible  --> 
+ Pipeline --> scm --> https://github.com/darinpope/jenkins-example-ansible
+*/main --> jenkinsfile
+
+
+====================================================================
+PIPELINE
+
+A multi-stage Hello World
+
+pipeline {
+      agent any
+      stages {
+           stage('First Stage') {
+                  steps {
+                         echo 'Step 1. Hello World'
+                  }
+           }
+           stage('Second Stage') {
+                  steps {
+                         echo 'Step 2. Second time Hello'
+                         echo 'Step 3. Third time Hello'
+                  }
+           }
+      }
+}
+
+test-pipeline
+
+pipeline {
+     agent any
+     triggers { cron('* * * * *') }
+     options { timeout(time: 5) }
+     parameters { 
+          booleanParam(name: 'DEBUG_BUILD', defaultValue: true, 
+          description: 'Is it the debug build?') 
+     }
+     stages {
+          stage('Example') {
+               environment { NAME = 'Rafal' }
+               when { expression { return params.DEBUG_BUILD }} 
+          steps {
+               echo "Hello from $NAME"
+               script {
+                    def browsers = ['chrome', 'firefox']
+                    for (int i = 0; i < browsers.size(); ++i) {
+                         echo "Testing the ${browsers[i]} browser."
+                    }
+                }
+            }
+     }
+ }
+ post { always { echo 'I will always say Hello again!' } }
+}
+
+=============================================================
+java 11 version #확인
+
+yum list java*jdk-devel
+java --version
+rpm -qa java*jdk-devel
+java --version
+which java
+readlink -f /bin/java
+yum install java-11-openjdk-devel.x86_64 -y
+alternatives --config java   2번선택
+
+wget https://services.gradle.org/distributions/gradle-7.4.2-bin.zip
+unzip gradle-7.4.2-bin.zip
+mv gradle-7.4.2 /opt/gradle/
+vi /etc/profile.d/gradle.sh
+# /etc/profile.d/gradle.sh
+
+export GRADLE_HOME=/opt/gradle
+export PATH=${GRADLE_HOME}/bin:${PATH}
+
+chmod +x /etc/profile.d/gradle.sh
+source /etc/profile.d/gradle.sh
+gradle -v
+
+git clone https://github.com/leszko/calculator.git
+
+1. Go to http://start.spring.io/.
+2. Select Gradle Project instead of Maven Project (you can choose Maven if you prefer it to Gradle).
+3. Fill Group and Artifact (for example, com.leszko and calculator).
+4. Add Web to Dependencies.
+5. Click on Generate
+
+압축해제
+$ ls -a
+. .. build.gradle .git .gitignore gradle gradlew gradlew.bat 
+HELP.md README.md settings.gradle src
+$ ./gradlew compileJava
+$ git add .
+$ git commit -m "Add Spring Boot skeleton"
+$ git push -u origin main
+
+./gradlew compileJava
+
+Creating a checkout stage
+
+pipeline {
+    agent any
+    stages {
+        stage("Checkout") {
+           steps {
+               git url: 'https://github.com/leszko/calculator.git', branch: 'main'
+           }
+        }
+       stage("Compile") {
+          steps {
+              sh "./gradlew compileJava"
+          }
+       }
+    }
+}
+
+
+
+vi src/test/java/com/leszko/calculator/Calculator.java
+
+package com.leszko.calculator;
+import org.springframework.stereotype.Service;
+
+@Service
+public class Calculator {
+       public int sum(int a, int b) {
+              return a + b;
+       }
+}
+
+vi src/main/java/com/leszko/calculator/CalculatorController.java
+package com.leszko.calculator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+@RestController
+class CalculatorController {
+      @Autowired
+      private Calculator calculator;
+
+      @RequestMapping("/sum")
+      String sum(@RequestParam("a") Integer a, 
+                     @RequestParam("b") Integer b) {
+            return String.valueOf(calculator.sum(a, b));
+      }
+}
+
+./gradlew bootRun
+
+
+vi src/test/java/com/leszko/calculator/CalculatorTest.java
+package com.leszko.calculator;
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+
+public class CalculatorTest {
+     private Calculator calculator = new Calculator();
+
+     @Test
+     public void testSum() {
+          assertEquals(5, calculator.sum(2, 3));
+     }
+}
+
+ ./gradlew test
+
+pipeline {
+    agent any
+    stages {
+        stage("Checkout") {
+           steps {
+               git url: 'https://github.com/leszko/calculator.git', branch: 'main'
+           }
+        }
+       stage("Compile") {
+          steps {
+              sh "./gradlew compileJava"
+          }
+       }
+       stage("Unit test") {
+          steps {
+              sh "./gradlew test"
+          }
+       }
+    }
+}
+
+$ git add Jenkinsfile
+$ git commit -m "Add Jenkinsfile"
+$ git push
+
+
+pipeline {
+    agent any
+    stages {
+        stage("Checkout") {
+           steps {
+               git url: 'https://github.com/leszko/calculator.git', branch: 'main'
+           }
+        }
+       stage("Compile") {
+          steps {
+              sh "./gradlew compileJava"
+          }
+       }
+       stage("Unit test") {
+          steps {
+              sh "./gradlew test"
+          }
+       }
+       stage("Code coverage") {
+          steps {
+              sh "./gradlew jacocoTestReport"
+              sh "./gradlew jacocoTestCoverageVerification"
+          }
+       }
+       stage("Static code analysis") {
+          steps {
+              sh "./gradlew checkstyleMain"
+          }
+       }
+    }
+}
+
+===================================================================
+
+pipeline { 
+     agent any 
+triggers { 
+     pollSCM('* * * * *') 
+} 
+     stages { 
+          stage("Compile") { 
+               steps { 
+                    sh "./gradlew compileJava" 
+               } 
+          } 
+          stage("Unit test") { 
+               steps { 
+                    sh "./gradlew test" 
+               } 
+          } 
+stage("Code coverage") { 
+     steps { 
+          sh "./gradlew jacocoTestReport" 
+          sh "./gradlew jacocoTestCoverageVerification" 
+     } 
+} 
+stage("Static code analysis") { 
+     steps { 
+          sh "./gradlew checkstyleMain" 
+     } 
+} 
+stage("Package") { 
+     steps { 
+          sh "./gradlew build" 
+     } 
+} 
+stage("Docker build") { 
+     steps { 
+          sh "docker build -t leszko/calculator:${BUILD_TIMESTAMP} ." 
+     } 
+} 
+stage("Docker push") { 
+     steps { 
+          sh "docker push leszko/calculator:${BUILD_TIMESTAMP}" 
+     } 
+} 
+stage("Update version") { 
+    steps { 
+        sh "sed -i 's/{{VERSION}}/${BUILD_TIMESTAMP}/g' deployment.yaml" 
+    } 
+} 
+stage("Deploy to staging") { 
+     steps { 
+        sh "kubectl config use-context staging" 
+        sh "kubectl apply -f hazelcast.yaml" 
+        sh "kubectl apply -f deployment.yaml" 
+        sh "kubectl apply -f service.yaml" 
+     } 
+} 
+stage("Acceptance test") { 
+     steps { 
+          sleep 60 
+          sh "chmod +x acceptance-test.sh && ./acceptance-test.sh"
+     } 
+} 
+stage("Release") { 
+    steps { 
+        sh "kubectl config use-context production" 
+        sh "kubectl apply -f hazelcast.yaml" 
+        sh "kubectl apply -f deployment.yaml" 
+        sh "kubectl apply -f service.yaml" 
+    } 
+} 
+stage("Smoke test") { 
+    steps { 
+        sleep 60 
+        sh "chmod +x smoke-test.sh && ./smoke-test.sh" 
+    } 
+} 
+} 
+} 
+
+
+SCM
+
+-->GIT
+https://github.com/leszko/calculator3.git
+/*main
+
+==================================================================
+multibranch pipeline --> branch sources --. git -- project repository https://github.com/leszko/calculator3.git
+--> scan multibranch.. 1minute -->
+
+
+

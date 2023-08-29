@@ -1,0 +1,179 @@
+sudo apt update
+cd /etc/netplan/
+sudo vi /etc/netplan/01-network-manager-all.yaml 
+
+network:
+  ethernets:
+    ens33:
+      dhcp4: true
+  version: 2
+
+sudo netplan apply
+reboot
+ip a
+
+sudo apt update
+sudo apt install openjdk-11-jre-headless -y
+mkdir $HOME/jenkins_home
+
+#일반형 X
+docker run -d -p 8085:8080 -v $HOME/jenkins_home:/var/jenkins_home --name jenkins jenkins/jenkins 
+
+#도커권한용 O
+docker run -u 0 --privileged --name jenkins -it -d -p 8080:8080 -p 50000:50000 \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v $(which docker):/usr/bin/docker \
+-v /home/jenkins_home:/var/jenkins_home \
+jenkins/jenkins:latest
+
+
+docker logs jenkins
+docker ps -a
+
+pipeline {
+    agent any
+    stages {
+          stage('Hello') {
+                steps {
+                      echo 'Hello World'
+                }
+          }
+    }
+}
+
+agent-1
+/var/jenkins
+
+launch method -- launch a...
+use Websocket 
+
+curl -sO http://localhost:8085/jnlpJars/agent.jar
+sudo java -jar agent.jar -jnlpUrl http://localhost:8085/computer/AGENT%2D1/jenkins-agent.jnlp -secret 277809b57b07c5823d8fda9ab3814ea23aa5c9b754734419f9267bd0f74c7d1c -workDir "/var/jenkins"
+
+hello-2
+pipeline {
+    agent {
+           label 'agent-1'
+    }
+    stages {
+          stage('Hello') {
+                steps {
+                      echo 'Hello World'
+                }
+          }
+    }
+}
+
+
+docker-agent
+
+pluin
+
+docker all
+
+remote docker #minikube -4G
+
+[root@rocky8-server ~]# sudo vi /etc/docker/daemon.json
+{
+  "hosts": ["tcp://0.0.0.0:2375", "unix:///var/run/docker.sock"]
+}
+
+[root@rocky8-server ~]# sudo vi /lib/systemd/system/docker.service | grep ExecStart
+#ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+ExecStart=/usr/bin/dockerd --containerd=/run/containerd/containerd.sock
+
+[root@rocky8-server ~]# systemctl daemon-reload
+[root@rocky8-server ~]# systemctl restart docker
+
+[root@rocky8-server ~]# netstat -tnlp
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      831/sshd
+tcp6       0      0 :::22                   :::*                    LISTEN      831/sshd
+tcp6       0      0 :::2375                 :::*                    LISTEN      800719/dockerd
+jacob@dubaekPC:~$ docker -H 192.168.56.9:2375 images
+REPOSITORY                  TAG            IMAGE ID       CREATED       SIZE
+<none>                      <none>         5fb7a90a25aa   4 days ago    72.8MB
+postgres                    10-alpine      26c27c6e4a93   10 days ago   72.8MB
+postgres                    10.17-alpine   26c27c6e4a93   10 days ago   72.8MB
+quay.io/keycloak/keycloak   13.0.1         3211f97fa4c8   5 weeks ago   698MB
+
+jenkins master
+
+docker -H 192.168.56.9:2375 images
+
+docker-agent 만들기
+
+pluin 확인 docker...
+
+new cloud
+
+docker-agent 
+
+docker host -- 2375-- enable -- lbel docker-agent -- image jenkins/agent --instance 10
+
+pipeline {
+    agent {
+           label 'docker-agent1'
+    }
+    stages {
+          stage('Hello') {
+                steps {
+                      echo 'Hello World'
+                }
+          }
+    }
+}
+
+vi Dockerfile
+FROM jenkins/agent
+USER root
+RUN apt-get update && \
+apt-get install -y python
+USER jenkins
+
+docker build -t leszko/jenkins-agent-python .
+
+docker images | grep leszko/jenkins-agent-python
+docker run -i -t --name aloha-python1 leszko/jenkins-agent-python:latest /bin/bash
+
+root@2ca7cf23f450:/# python
+Python 2.7.18 (default, Jul  1 2022, 12:27:04) 
+[GCC 9.4.0] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> print "Hello World from Python!"
+Hello World from Python!
+
+
+docker push leszko/jenkins-agent-python
+
+
+master docker 사용
+
+pipeline {
+    agent {
+          docker {
+                 image 'ubuntu:latest'
+          }
+    }
+    stages {
+          stage('Build') {
+                steps {
+                      sh 'cat /etc/lsb-release'
+                }
+          }
+    }
+}
+
+git hub 
+
+scm
+git
+https://github.com/darinpope/jenkins-example-docker.git
+*/main
+Jenkinsfile-1
+
+
+
+
+

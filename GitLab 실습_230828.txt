@@ -1,0 +1,203 @@
+Gitlab 실습
+
+multipass get local.driver
+multipass set local.driver=virtualbox
+
+multipass networks
+
+multipass launch 20.04 --name gitlab -c 2 -m 4G -d 40G --network Ethernet
+
+multipass exec -n gitlab -- sudo bash -c 'cat << EOF > /etc/netplan/10-custom.yaml
+network:
+    version: 2
+    ethernets:
+        enp0s8:
+            dhcp4: no
+            addresses: [192.168.219.20X/24]
+EOF'
+
+multipass exec -n gitlab -- sudo netplan apply
+multipass info gitlab
+
+#### gitlab (ubuntu) 설치
+curl -sS https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | sudo bash
+
+추가된 repository 확인
+cat /etc/apt/sources.list.d/gitlab_gitlab-ce.list
+
+gitLab 설치
+sudo apt update
+sudo apt -y install gitlab-ce
+
+gitLab 설정 변경
+sudo nano /etc/gitlab/gitlab.rb
+  external_url 'http://192.168.219.200:8081/'
+  
+재설정
+sudo gitlab-ctl reconfigure
+
+web Ui,
+sudo cat /etc/gitlab/initial_root_password
+
+사이트 접속 (http://192.168.219.200:8081/). id: root, password: 위 화면에서 복사.
+
+root 계정 비밀 번호 변경
+Admin Area > Overview > Users > Click "Edit" 
+
+gitlab 운영시 주요 명령어
+- sudo gitlab-ctl status
+- sudo gitlab-ctl stop
+- sudo gitlab-ctl restart, or
+- sudo gitlab-ctl restart logrotate
+
+### 4. Runner 설치 (우분투)
+#### runner 설치 vm 생성
+- multipass launch 20.04 --name runner -c 2 -m 4G -d 30G --network Ethernet 
+
+multipass exec -n runner -- sudo bash -c 'cat << EOF > /etc/netplan/10-custom.yaml
+network:
+    version: 2
+    ethernets:
+        enp0s8:
+            dhcp4: no
+            addresses: [192.168.219.20x/24]
+EOF'
+
+multipass exec -n runner -- sudo netplan apply
+multipass info runner
+
+#### runner (ubuntu) 설치 
+gitlab-demo > Settings > CI / CD > Runners > Clicking "Expand" > Click "New project runner"
+
+아래 지시문을 이행한다.
+- multipass shell runner
+```
+# Download the binary for your system
+sudo curl -L --output /usr/local/bin/gitlab-runner https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-linux-amd64
+
+# Give it permission to execute
+sudo chmod +x /usr/local/bin/gitlab-runner
+
+# Create a GitLab Runner user
+sudo useradd --comment 'GitLab Runner' --create-home gitlab-runner --shell /bin/bash
+
+# Install and run as a service
+sudo gitlab-runner install --user=gitlab-runner --working-directory=/home/gitlab-runner
+sudo gitlab-runner start
+
+
+gitlab-runner를 register 한다. gitlab-runner를 stop 한 후에, 
+sudo gitlab-runner register  
+--url https://gitlab.com  
+--token glrt-6PndnxjqDRFyx4kKvM4D
+
+sudo gitlab-runner start
+
+----
+stages:          # List of stages for jobs, and their order of execution
+  - build
+  - test
+  - deploy
+
+build-job:       # This job runs in the build stage, which runs first.
+  stage: build
+  script:
+    - echo "Compiling the code..."
+    - echo "Compile complete."
+    - mkdir build/
+    - echo "My application binary file" > build/executable-binary-file-v1
+
+unit-test-job:   # This job runs in the test stage.
+  stage: test    # It only starts when the job in the build stage completes successfully.
+  script:
+    - echo "Running unit tests... This will take about 60 seconds."
+    - cat $CI_PROJECT_DIR/build/executable-binary-file-v1
+    - echo "Code coverage is 90%"
+
+lint-test-job:   # This job also runs in the test stage.
+  stage: test    # It can run at the same time as unit-test-job (in parallel).
+  script:
+    - echo "Linting code... This will take about 10 seconds."
+    - echo "No lint issues found."
+
+deploy-job:      # This job runs in the deploy stage.
+  stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
+  environment: production
+  script:
+    - echo "Deploying application..."
+    - echo "Application successfully deployed."
+	
+----
+  artifacts:
+    paths:
+      - build/executable-binary-file-v1
+	  
+----### 최종 .gitlab-ci.yml file
+image: python:3.9-slim-buster
+
+variables:
+  USERNAME: w
+
+stages:          # List of stages for jobs, and their order of execution
+  - build
+  - test
+  - deploy
+
+build-job:       # This job runs in the build stage, which runs first.
+  stage: build
+  script:
+    - echo "Compiling the code..."
+    - echo "Compile complete."
+    - mkdir build/
+    - echo "My application binary file" > build/executable-binary-file-v1
+  artifacts:
+    paths:
+      - build/executable-binary-file-v1
+
+unit-test-job:   # This job runs in the test stage.
+  stage: test    # It only starts when the job in the build stage completes successfully.
+  script:
+    - echo "Running unit tests... This will take about 60 seconds."
+    - echo "Code coverage is 90%"
+    - cat $CI_PROJECT_DIR/build/executable-binary-file-v1    
+
+lint-test-job:   # This job also runs in the test stage.
+  stage: test    # It can run at the same time as unit-test-job (in parallel).
+  script:
+    - echo "Linting code... This will take about 10 seconds."
+    - echo "No lint issues found."
+
+deploy-job:      # This job runs in the deploy stage.
+  stage: deploy  # It only runs when *both* jobs in the test stage complete successfully.
+  environment: production
+  script:
+    - echo "Deploying application..."
+    - python3 --version
+    - echo "Using credential- $USERNAME, $REGISTRY_PASS"
+    - echo "Application successfully deployed."
+	
+----
+
+## 참조 runner 제거
+# 모든 runner 삭제
+$ gitlab-runner unregister --all-runners
+
+# gitlab-runner 제거
+$ sudo gitlab-runner uninstall
+
+# gitlab-runner 클라이언트 삭제, 재설치 할 경우 삭제 불 필요
+$ sudo rm -rf /usr/local/bin/gitlab-runner
+
+# 추가한 사용자 제거
+$ sudo userdel gitlab-runner
+$ sudo rm -rf /home/gitlab-runner/
+
+uninstall의 경우 gitlab-runner 바이너리 파일을 삭제하는 것이 아닌 서비스 스크립트를 삭제하기 때문에 gitlab-runner 명령어는 그대로 실행이 가능.
+
+### gitlab-runner 재 설치
+sudo gitlab-runner install --user=gitlab-runner --working-directory=/home/gitlab-runner
+sudo gitlab-runner start
+sudo gitlab-runner stop
+
+sudo gitlab-runner register  --url https://gitlab.com  --token glrt---pm-ijh_VSXQCK8y-yy
+sudo gitlab-runner run

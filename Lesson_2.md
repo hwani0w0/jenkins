@@ -68,10 +68,9 @@ alternatives --config java
 yum -y install git
 ```
 
-- jenkins 초기 암호 : ` 8907e624c5ef47dcb160970f756ac609 `
+- jenkins 초기 암호
+8907e624c5ef47dcb160970f756ac609
 
-
-  
 ### jenkins on docker 
 - 컨테이너가 마스터 노드의 docker 권한을 갖을 수 있도록 jenkins 생성
 - 아래와 같은 명령어로 jenkins를 설치해야 docker 이미지를 가져올 수 있음

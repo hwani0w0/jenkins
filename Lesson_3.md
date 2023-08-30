@@ -153,8 +153,7 @@ docker run -d -p 3000:3000 --name grafana grafana/grafana
 - worker node 연결 검증
 ```
 scp root@192.168.1.10:/etc/kubernetes/admin.conf .
-
 kubectl get nodes --kubeconfig admin.conf
 ```
-
-- 
+- windows : https://microk8s.io/ *helm 따로 설치할 필요 없음
+- minikube는 helm 설치해야함

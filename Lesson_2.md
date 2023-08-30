@@ -68,8 +68,7 @@ alternatives --config java
 yum -y install git
 ```
 
-- jenkins 초기 암호
-8907e624c5ef47dcb160970f756ac609
+- jenkins 초기 암호 : `8907e624c5ef47dcb160970f756ac609`
 
 
   
